@@ -21,6 +21,7 @@ RANK_VALUES = {
 HIDDEN_CARD = ("Hidden", )
 TARGET_VALUE = 21
 DEALER_MIN_THRESHOLD = 17
+START_CHIPS = 100
 
 def print_coloured(text, color_code, bold=False):
     if bold:
@@ -50,7 +51,7 @@ def display_rules():
     prompt("** The Rules **", bold=True)
     prompt("")
     prompt(f"- The goal of {TARGET_VALUE} is to try to "
-    "get as close to {TARGET_VALUE} as possible without")
+    f"get as close to {TARGET_VALUE} as possible without")
     prompt("  going over. If you go over this value, "
     "it's a bust, and you lose!")
     prompt("")
@@ -65,7 +66,7 @@ def display_rules():
     prompt("- When the player stays, it's the dealer's turn. The dealer must ")
     prompt(f"  hit until their total is at least "
     f"{DEALER_MIN_THRESHOLD}. If the dealer busts, ")
-    prompt("  then the you win!")
+    prompt("  then you win!")
     prompt("")
     prompt("- The game ends when the player runs out of chips.")
     prompt("")
@@ -117,9 +118,7 @@ def display_cards(*args, colour=None):
         'Spades': "\u2660"
     }
 
-    rank_formatting = []
     cards = [[] for _ in range(1, 8)]
-
 
     for i, arg in enumerate(args):
 
@@ -133,20 +132,12 @@ def display_cards(*args, colour=None):
             cards[6].extend(["+---------+", " "])
 
         else:
-            top_display = [" " for _ in range(1, 10)]
-            btm_display = [" " for _ in range(1, 10)]
-
-            top_rank_format(arg, top_display)
-            btm_rank_format(arg, btm_display)
-            rank_formatting.append((top_display, btm_display))
-
-
             cards[0].extend(["+---------+", " "])
-            cards[1].extend([f"|{''.join(rank_formatting[i][0])}|", " "])
+            cards[1].extend([f"|{rank_format(arg)[0]}|", " "])
             cards[2].extend(["|         |", " "])
             cards[3].extend([f"|    {suit_unicode[arg[0]]}    |", " "])
             cards[4].extend(["|         |", " "])
-            cards[5].extend([f"|{''.join(rank_formatting[i][1])}|", " "])
+            cards[5].extend([f"|{rank_format(arg)[1]}|", " "])
             cards[6].extend(["+---------+", " "])
 
     cards = [
@@ -162,19 +153,10 @@ def display_cards(*args, colour=None):
         for row in cards:
             print_coloured(''.join(row), "\033[91m")
 
-def top_rank_format(card, top):
-    if len(card[1]) > 1:
-        top[0] = card[1][0]
-        top[1] = card[1][1]
-    else:
-        top[0] = card[1]
-
-def btm_rank_format(card, btm):
-    if len(card[1]) > 1:
-        btm[-2] = card[1][0]
-        btm[-1] = card[1][1]
-    else:
-        btm[-1] = card[1]
+def rank_format(card):
+    top = f"{card[1]:<9s}"
+    bot = f"{card[1]:>9s}"
+    return (top, bot)
 
 def display_hands(dealer, player, chip_stack, hide_card=False):
     clear_screen()
@@ -262,6 +244,7 @@ def display_winner(result):
         time.sleep(1)
 
 def game_setup(player_hand, dealer_hand, deck):
+    print(deck)
     for i in range(0, 2):
         player_hand[i] = deal_card(deck)
         update_deck(player_hand[i], deck)
@@ -274,37 +257,32 @@ def place_bets(dealer_hand, player_hand, chip_stack):
 
     while True:
         bet = input("---> Bet: $")
-
-        try:
-            bet = int(bet)
-
-        except ValueError:
+        valid, reason = validate_bet(bet, chip_stack)
+        if not valid:
             clear_screen()
-            prompt("Bet must be a whole number: '1', '2', '5', etc.")
+            prompt(reason)
             time.sleep(1.5)
             clear_screen()
             display_hands(dealer_hand, player_hand, chip_stack, hide_card=True)
-            continue
-
-        if bet <= 0:
-            clear_screen()
-            prompt("The minimum bet is $1...")
-            time.sleep(1.5)
-            clear_screen()
-            display_hands(dealer_hand, player_hand, chip_stack, hide_card=True)
-            continue
-
-        if bet > chip_stack['Player']:
-            clear_screen()
-            prompt("You don't have enough chips!")
-            time.sleep(1.5)
-            clear_screen()
-            display_hands(dealer_hand, player_hand, chip_stack, hide_card=True)
-            continue
-
-        break
+        else:
+            break
 
     return int(bet)
+
+def validate_bet(bet, chip_stack):
+    try:
+        bet = int(bet)
+
+    except ValueError:
+        return (False, "Bet must be a whole number: '1', '2', '5', etc.")
+
+    if bet <= 0:
+        return (False, "The minimum bet is $1...")
+
+    if bet > chip_stack['Player']:
+        return (False, "You don't have enough chips!")
+
+    return (True, "Dealer: 'No more bets!'")
 
 def update_player_total(dealer_hand,
                         player_hand,
@@ -379,10 +357,15 @@ def invalid_yes_or_no(answer):
 
     return False
 
-def ask_play_again():
-    prompt("")
-    prompt("Would you like to play again? 'Y/N'")
-    choice = input("---> ").strip().lower()
+def ask_play_again(round_finished=False, no_chips=False):
+    if round_finished:
+        prompt("")
+        prompt("Would you like to play again? 'Y/N'")
+        choice = input("---> ").strip().lower()
+    
+    if no_chips:
+        display_no_chips()
+        choice = input("---> ")
 
     while invalid_yes_or_no(choice):
         prompt("Please enter 'Y' or 'N' to continue")
@@ -413,13 +396,32 @@ def no_available_chips(chip_stack):
     return False
 
 def chip_stack_init(chip_stack):
-    chip_stack['Player'] = 10
+    chip_stack['Player'] = START_CHIPS
+
+def display_no_chips():
+    prompt("")
+    prompt("Hmmm...you have no chips left!")
+    prompt("Would you like to lose more money? Y/N")
+
+def display_goodbye():
+    clear_screen()
+    prompt(f"Ok! Thanks for playing {TARGET_VALUE}!", bold=True)
+    
+    return True
+
+def check_play_again(play_again):
+    if play_again == 'n':
+        display_goodbye()
+        return False
+
+    return True
 
 def play_twenty_one():
+    clear_screen()
     display_welcome_message()
     time.sleep(1.2)
     check_rules()
-    chip_stack = {'Player': 10}
+    chip_stack = {'Player': START_CHIPS}
 
     while True:
         deck = deck_init()
@@ -478,22 +480,17 @@ def play_twenty_one():
             display_winner(result)
 
         if no_available_chips(chip_stack):
-            prompt("")
-            prompt("Hmmm...you have no chips left!")
-            prompt("Would you like to lose more money? Y/N")
-            play_again = input("---> ")
+            play_again = ask_play_again(no_chips=True)
             chip_stack_init(chip_stack)
 
-            if play_again == 'n':
-                clear_screen()
-                prompt(f"Ok! Thanks for playing {TARGET_VALUE}!", bold=True)
+            if not check_play_again(play_again):
+                display_goodbye()
                 break
 
         else:
-            play_again = ask_play_again()
-            if play_again == 'n':
-                clear_screen()
-                prompt(f"Ok! Thanks for playing {TARGET_VALUE}!", bold=True)
+            play_again = ask_play_again(round_finished=True)
+            if not check_play_again(play_again):
+                display_goodbye()
                 break
 
 play_twenty_one()
