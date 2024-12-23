@@ -1,38 +1,21 @@
-""" 
-[1, 2, 3, 4] Comparison
+"""
+Enter the 1st number: 25
+Enter the 2nd number: 15
+Enter the 3rd number: 20
+Enter the 4th number: 17
+Enter the 5th number: 23
+Enter the last number: 17
 
-[3, 1, 4, 2] if array1[0] == array2[1] and array1[1] == array2[3] and array1[2] == array2[0]
-
-[4, 3, 2, 1] if array1[0] == array2[3] and array1[1] == array2[2] and array1[2] == array2[1]
-
-[2, 4, 1, 3] if array1[0] == array2[2] and array1[1] == array2[0] and array1[2] == array2[3] 
-
+17 is in 25,15,20,17,23.
 """
 
+def max_sub(lst):
+    sub_arrays = []
 
-def count_different_matrices(matrices):
-    unique_matrices = set()
+    for i in range(len(lst)):
+        for j in range(i + 1, len(lst) + 1):
+            sub_arrays.append(lst[i:j])
+    
+    return max(sub_arrays, key=sum)
 
-    for matrix in matrices:
-        a, b, c, d = matrix
-        
-        rotations = [
-            (a, b, c, d),
-            (c, a, d, b),
-            (d, c, b, a),
-            (b, d, a, c)
-        ]
-
-        min_rotation = min(rotations)
-        unique_matrices.add(min_rotation)
-
-    return len(unique_matrices)
-
-
-""" 
-count_different_matrices([[1, 2, 3, 4],
-                [3, 1, 4, 2],
-                [4, 3, 2, 1],
-                [2, 4, 1, 3]]) """
-
-print(count_different_matrices([[5, 1, 2, 6], [5, 4, 3, 5], [2, 5, 6, 1]]))
+print(max_sub([1, 2, 3, 4]))
