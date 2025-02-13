@@ -5,28 +5,15 @@ Find the most efficient move for a player to make given a list of moves, and mov
 
 """
 
-def minimax(tree):
-    unnested_tree = []
-    stack = tree[:]
+def unique_sequence(lst):
+    output_list = [lst[0]]
+    
+    for i in range(1, len(lst)):
+        if lst[i] != output_list[-1]:
+            output_list.append(lst[i])
 
-    while stack:
-        current_element = stack.pop()
-        print(f'current element is {current_element}')
- 
-        if isinstance(current_element, list):
-            try:
-                unnested_tree.insert(0, max(current_element))
-            except TypeError:
-                print('insert failed, stack extended')
-                stack.extend(current_element)
-        
-        else:
-            unnested_tree.insert(0, current_element)
-        print(f'stack is {stack}')
-        print(f'unnested_tree is {unnested_tree}')
-        print('--------------------------------->')
+    return output_list
 
-
-    return unnested_tree
-
-print(minimax([ [ [ [0,1],[31,9,3,20] ],5,[4,1] ], 1, 2]))
+original = [1, 1, 2, 6, 6, 6, 5, 5, 3, 3, 3, 4, 2]
+expected = [1, 2, 6, 5, 3, 4, 2]
+print(unique_sequence(original) == expected)      # True

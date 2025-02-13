@@ -53,6 +53,7 @@ def min_coins(coins, amount):
     for coin in coins:
         for min_amount in range(coin, len(minimum_amount_of_coins)):
             minimum_amount_of_coins[min_amount] = min(minimum_amount_of_coins[min_amount], minimum_amount_of_coins[min_amount - coin] + 1)
+    
     return minimum_amount_of_coins
 
 print(min_coins([1, 3, 4], 6))
