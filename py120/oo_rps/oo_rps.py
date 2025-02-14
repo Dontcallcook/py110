@@ -56,7 +56,7 @@ class Player:
 
     def display_move_history(self):
         prompt(f"{self}'s past moves: "
-               f"{', '.join(str(move) for i,move in self.move_history)}")
+               f"{', '.join(str(move) for move in self.move_history)}")
 
 class Computer(Player):
     def __init__(self):
@@ -76,6 +76,10 @@ class DefaultComputer(Computer):
     def __str__(self):
         return 'Computer'
 
+    @classmethod
+    def info(cls):
+        return 'A blank slate.'
+
 class Hal(Computer):
     def __init__(self):
         super().__init__()
@@ -91,6 +95,10 @@ class Hal(Computer):
         self.move = Move(random.choice(self._moves))
         self.move_history.append(self.move)
 
+    @classmethod
+    def info(cls):
+        return 'Cold, cutting, and logical.'
+
 class R2d2(Computer):
     def __init__(self):
         super().__init__()
@@ -100,6 +108,10 @@ class R2d2(Computer):
 
     def __str__(self):
         return 'R2D2'
+
+    @classmethod
+    def info(cls):
+        return 'Predictable and Stubborn.'
 
     def choose(self):
         self.move = Move('rock')
@@ -116,11 +128,16 @@ class Daneel(Computer):
     def __str__(self):
         return 'Daneel'
 
+    @classmethod
+    def info(cls):
+        return 'Observant and adaptable.'
+
     def choose(self):
         if not self.move_history:
             self.move = Move(random.choice(Move.CHOICES))
         else:
-            self.move = self._human_ref.move_history[-1]
+            last_human_move = self._human_ref.move_history[-1]
+            self.move = last_human_move
         self.move_history.append(self.move)
 
 class Human(Player):
@@ -208,10 +225,16 @@ class RPSGame:
             name = 'Anonymous'
         return name.title().strip()
 
-
     def _display_opponents(self):
-        prompt('Choose your opponent: (1-4)\n'
-               '1. Standard | 2. R2D2 | 3. Daneel | 4. Hal\n')
+        prompt(f'''Choose your opponent: (1-4)
+
+    1.) {DefaultComputer.__name__}: {DefaultComputer.info()}
+
+    2.) {R2d2.__name__}: {R2d2.info()}
+
+    3.) {Daneel.__name__}: {Daneel.info()}
+
+    4.) {Hal.__name__}: {Hal.info()}\n''')
 
     def _opponent_selection(self):
         self._display_opponents()
@@ -225,12 +248,16 @@ class RPSGame:
             opponent = input()
 
         if RPSGame.OPPONENTS[opponent] == Daneel:
-            return RPSGame.OPPONENTS[opponent](self.human)
+            self._computer = RPSGame.OPPONENTS[opponent](self.human)
+        else:
+            self._computer = RPSGame.OPPONENTS[opponent]()
 
-        return RPSGame.OPPONENTS[opponent]()
-
-    def _display_goodbye_message(self):
-        prompt('Thanks for playing Rock Paper Scissors Lizard Spock. Goodbye!')
+    def game_setup(self):
+        self.human.name = self.get_name()
+        clear()
+        self._display_welcome_message()
+        self._opponent_selection()
+        self._score = Score(self.human, self._computer)
 
     def _get_result(self):
         winner = Move.compare(self.human, self._computer)
@@ -263,37 +290,18 @@ class RPSGame:
         print(LINE_SPACE)
         input('Press any key to continue to the next round...')
 
-    def play(self):
+    def play_round(self):
+        self._computer.choose()
+        self.human.choose()
+        winner, loser = self._get_result()
         clear()
-        self.human.name = self.get_name()
-        clear()
-        self._display_welcome_message()
-        opponent = self._opponent_selection()
-        self._computer = opponent
-        self._score = Score(self.human, self._computer)
-        clear()
-        while True:
-            self._computer.choose()
-            self.human.choose()
-            winner, loser = self._get_result()
-            clear()
-            self._display_result(winner, loser)
-            if winner:
-                self._score.update(winner)
-            self._score.display()
-            print('Move history:')
-            self.human.display_move_history()
-            self._computer.display_move_history()
-            champ = self._score.get_champ()
-            if champ:
-                self._display_champ(champ)
-                self._score.reset(self.human, self._computer)
-                if not self._play_again():
-                    break
-            self._display_next_round()
-            clear()
-        clear()
-        self._display_goodbye_message()
+        self._display_result(winner, loser)
+        if winner:
+            self._score.update(winner)
+        self._score.display()
+        print('Move history:')
+        self.human.display_move_history()
+        self._computer.display_move_history()
 
     def _display_champ(self, champ):
         print(LINE_SPACE)
@@ -309,7 +317,29 @@ class RPSGame:
             prompt("Sorry, your choice is invalid!\n"
                    "Type 'y' to play again or 'n' to quit: ")
             answer = input()
+        clear()
 
         return answer.lower().startswith('y')
+
+    def _display_goodbye_message(self):
+        prompt('Thanks for playing Rock Paper Scissors Lizard Spock. Goodbye!')
+
+    def play(self):
+        clear()
+        self.game_setup()
+        clear()
+        while True:
+            self.play_round()
+            champ = self._score.get_champ()
+            if champ:
+                self._display_champ(champ)
+                self._score.reset(self.human, self._computer)
+                if not self._play_again():
+                    break
+            self._display_next_round()
+            clear()
+        clear()
+        self._display_goodbye_message()
+
 
 RPSGame().play()
