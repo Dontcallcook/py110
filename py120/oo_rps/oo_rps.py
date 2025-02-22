@@ -1,5 +1,6 @@
 import os
 import random
+import pdb
 
 LINE_SPACE = '\n'
 
@@ -66,24 +67,26 @@ class Computer(Player):
         self.move = Move(random.choice(Move.CHOICES))
         self.move_history.append(self.move)
 
-class DefaultComputer(Computer):
+class Stanley(Computer):
     def __init__(self):
         super().__init__()
+        self.name = 'Stanley'
 
     def __repr__(self):
-        return 'Computer'
+        return 'Stanley'
 
     def __str__(self):
-        return 'Computer'
+        return 'Stanley'
 
     @classmethod
     def info(cls):
-        return 'A blank slate.'
+        return 'Just an average guy'
 
 class Hal(Computer):
     def __init__(self):
         super().__init__()
         self._moves = Move.CHOICES + ['scissors', 'scissors', 'scissors']
+        self.name = 'Hal'
 
     def __repr__(self):
         return 'Hal'
@@ -97,11 +100,12 @@ class Hal(Computer):
 
     @classmethod
     def info(cls):
-        return 'Cold, cutting, and logical.'
+        return 'Cold, cutting, and logical'
 
 class R2d2(Computer):
     def __init__(self):
         super().__init__()
+        self.name = 'R2D2'
 
     def __repr__(self):
         return 'R2D2'
@@ -111,7 +115,7 @@ class R2d2(Computer):
 
     @classmethod
     def info(cls):
-        return 'Predictable and Stubborn.'
+        return 'Predictable and stubborn'
 
     def choose(self):
         self.move = Move('rock')
@@ -120,6 +124,7 @@ class R2d2(Computer):
 class Daneel(Computer):
     def __init__(self, human):
         super().__init__()
+        self.name = 'Daneel'
         self._human_ref = human
 
     def __repr__(self):
@@ -130,7 +135,7 @@ class Daneel(Computer):
 
     @classmethod
     def info(cls):
-        return 'Observant and adaptable.'
+        return 'Observant and adaptable'
 
     def choose(self):
         if not self.move_history:
@@ -172,7 +177,7 @@ class Move:
     },
     'paper': {
         'rock': 'paper COVERS rock',
-        'Spock': 'paper DISPROVES Spock'
+        'spock': 'paper DISPROVES Spock'
     },
     'scissors': {
         'paper': 'scissors CUTS paper',
@@ -180,7 +185,7 @@ class Move:
     },
     'lizard': {
         'paper': 'lizard EATS paper',
-        'Spock': 'lizard POISONS Spock'
+        'spock': 'lizard POISONS Spock'
     },
     'spock': {'rock': 'Spock VAPORISES rock',
               'scissors': 'Spock SMASHES scissors'
@@ -206,11 +211,11 @@ class Move:
         return None
 
 class RPSGame:
-    OPPONENTS = {'1': DefaultComputer, '2': R2d2, '3': Daneel, '4': Hal}
+    OPPONENTS = {'1': Stanley, '2': R2d2, '3': Daneel, '4': Hal}
 
     def __init__(self):
         self.human = Human()
-        self._computer = DefaultComputer()
+        self._computer = Stanley()
         self._score = Score(self.human, self._computer)
 
     def _display_welcome_message(self):
@@ -221,16 +226,23 @@ class RPSGame:
     def get_name(self):
         prompt('Please enter your name: ')
         name = input()
+
+        while len(name) > 10:
+            clear()
+            prompt('Your name must be 10 characters or fewer: ')
+            name = input()
+
         if not name or name.isspace():
             name = 'Anonymous'
+
         return name.title().strip()
 
     def _display_opponents(self):
         prompt(f'''Choose your opponent: (1-4)
 
-    1.) {DefaultComputer.__name__}: {DefaultComputer.info()}
+    1.) {Stanley.__name__}: {Stanley.info()}
 
-    2.) {R2d2.__name__}: {R2d2.info()}
+    2.) {R2d2.__name__.upper()}: {R2d2.info()}
 
     3.) {Daneel.__name__}: {Daneel.info()}
 
@@ -271,17 +283,16 @@ class RPSGame:
     def _display_result(self, winner, loser):
         prompt(f'{self.human.name} chose: {self.human.move}')
         prompt(f'{self._computer} chose: {self._computer.move}')
+        print(LINE_SPACE)
 
         if winner:
             prompt('!!>> '
                    f'{Move.OUTCOMES[winner.move.choice][loser.move.choice]}'
                    ' <<!!')
-            print(LINE_SPACE)
-
             if winner == self.human:
                 prompt('You win!')
             if winner == self._computer:
-                prompt('Computer wins!')
+                prompt(f'{self._computer.name} wins!')
         else:
             prompt("It's a tie!")
 
@@ -305,7 +316,8 @@ class RPSGame:
 
     def _display_champ(self, champ):
         print(LINE_SPACE)
-        prompt(f'{champ} was the first to win 5 games and is the new champ!')
+        prompt(f'{champ.name} is the first to win 5 games '
+               f'and is the new champ!')
 
     def _play_again(self):
         prompt('Would you like to play again? (y/n) ')
